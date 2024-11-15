@@ -52,17 +52,41 @@ def handle_connection(server_socket):
             print(f"\nConexão aceita de {addr}")
             
             # Inicia threads para enviar e receber mensagens com o novo peer
-            threading.Thread(target=receive_messages, args=(peer_socket,)).start()
-            threading.Thread(target=send_messages, args=(peer_socket,)).start()
+            threading.Thread(target=receive_messages, args=(peer_socket,), daemon=True).start()
+            threading.Thread(target=send_messages, args=(peer_socket,), daemon=True).start()
         except Exception as e:
             if not exit_event.is_set():
                 print("\nErro ao aceitar conexão:", str(e))
             break
 
+def connect_to_peer(port):
+    """Solicita o IP do peer e tenta estabelecer uma conexão."""
+    while not exit_event.is_set():
+        try:
+            target_ip = input("\nDigite o IP do peer para conectar (ou 'exit' para sair): ")
+            if target_ip.lower() == "exit":
+                print("Encerrando chat.")
+                exit_event.set()
+                break
+
+            # Conecta ao peer especificado
+            peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            peer_socket.connect((target_ip, port))
+            print(f"Conectado ao peer em {target_ip}:{port}")
+
+            # Inicia threads para enviar e receber mensagens
+            threading.Thread(target=receive_messages, args=(peer_socket,), daemon=True).start()
+            threading.Thread(target=send_messages, args=(peer_socket,), daemon=True).start()
+            break
+        except Exception as e:
+            print(f"Erro ao conectar ao peer: {e}")
+            continue
+
 def start_peer(ip):
     """Função para iniciar o peer no modo servidor e cliente simultaneamente."""
-    # Iniciar como servidor
     port = 8080
+
+    # Inicia o servidor
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((ip, port))
@@ -72,28 +96,12 @@ def start_peer(ip):
     # Inicia a thread para aceitar conexões de entrada
     threading.Thread(target=handle_connection, args=(server_socket,), daemon=True).start()
 
-    # Permitir que o usuário se conecte a outro peer
+    # Solicita o IP do peer para conectar
+    connect_to_peer(port)
+
+    # Espera que a aplicação seja encerrada
     while not exit_event.is_set():
-        try:
-            target_ip = input("\nDigite o IP do peer para conectar (ou 'exit' para sair): ")
-            if target_ip.lower() == "exit":
-                print("Encerrando chat.")
-                exit_event.set()
-                break
-            target_port = int(input("Digite a porta do peer para conectar: "))
-
-            # Conecta ao peer especificado
-            peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            peer_socket.connect((target_ip, target_port))
-            print(f"Conectado ao peer em {target_ip}:{target_port}")
-
-            # Inicia threads para enviar e receber mensagens
-            threading.Thread(target=receive_messages, args=(peer_socket,)).start()
-            threading.Thread(target=send_messages, args=(peer_socket,)).start()
-
-        except Exception as e:
-            print(f"Erro ao conectar ao peer: {e}")
-            continue
+        pass
 
     server_socket.close()
     sys.exit(0)
