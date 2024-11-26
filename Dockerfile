@@ -19,5 +19,7 @@ COPY . .
 # Expose the port that the application will run on
 EXPOSE 8080
 
+RUN echo "source /app/venv/bin/activate" >> ~/.bashrc
+
 # Start the bash shell
 CMD ["bash"]

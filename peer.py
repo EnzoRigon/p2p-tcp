@@ -1,115 +1,94 @@
 import socket
 import threading
-import argparse
-import sys
+import json
+from naval_battle_game import NavyBattleGame
 
-# Evento para sinalizar para ambos os *threads* encerrarem
+PORT = 8080
 exit_event = threading.Event()
 
-def receive_messages(peer_socket):
-    """Função para tratar mensagens recebidas."""
-    try:
-        while not exit_event.is_set():
-            message = peer_socket.recv(1024).decode()
-            if message:
-                if message.lower() == "exit":
-                    print("\nPeer desconectou. Encerrando chat.")
-                    exit_event.set()
+def send_message(sock, message):
+    """Envia uma mensagem ao peer."""
+    sock.sendall(message.encode())
+
+def receive_message(sock):
+    """Recebe uma mensagem do peer."""
+    return sock.recv(1024).decode()
+
+def start_game(sock, is_server):
+    """Lógica principal do jogo."""
+    game = NavyBattleGame()
+    if is_server:
+        print("Aguardando navios do oponente...")
+        ships_json = receive_message(sock)
+        game.receive_opponent_ships(ships_json)
+        send_message(sock, game.export_player_ships_to_json())
+    else:
+        send_message(sock, game.export_player_ships_to_json())
+        ships_json = receive_message(sock)
+        game.receive_opponent_ships(ships_json)
+
+    print("Tabuleiros configurados! Que comece o jogo!")
+    game.print_boards()
+
+    turn = is_server
+    while not game.game_over:
+        if turn:
+            print("Seu turno!")
+            while True:
+                try:
+                    coordinates = input("Digite as coordenadas (ex: 23 para linha 2 e coluna 3): ")
+                    if len(coordinates) != 2 or not coordinates.isdigit():
+                        raise ValueError("Entrada inválida. Certifique-se de digitar exatamente dois dígitos.")
+                    x, y = int(coordinates[0]), int(coordinates[1])
+                    if game.opponent_board[x][y] in ["X", "O"]:
+                        raise ValueError("Você já atacou aqui! Tente novamente.")
+                    send_message(sock, f'{x}{y}')
+                    result = game.attack_opponent((x, y))
+                    if result:
+                        print("Você acertou!")
+                    else:
+                        print("Você errou!")
+                    game.print_boards()  # Atualiza os tabuleiros após a jogada do jogador
                     break
-                print("\nPeer:", message)
-            else:
-                print("\nPeer desconectou.")
-                exit_event.set()
-                break
-    except Exception as e:
-        if not exit_event.is_set():  # Só exibir erro se não estiver saindo
-            print("\nErro ao receber mensagem:", str(e))
-    finally:
-        peer_socket.close()
+                except ValueError as e:
+                    print(e)
+            turn = False
+        else:
+            print("Aguardando jogada do oponente...")
+            coordinates = receive_message(sock)
+            coordinates = (int(coordinates[0]), int(coordinates[1]))
+            hit = game.process_attack(coordinates)
+            if not game.player_ships:
+                print("Todos os seus navios foram destruídos! Você perdeu!")
+                game.game_over = True
+            game.print_boards()  # Atualiza os tabuleiros após a jogada do oponente
+            turn = True
 
-def send_messages(peer_socket):
-    """Função para tratar envio de mensagens."""
-    try:
-        while not exit_event.is_set():
-            message = input("Você: ")
-            if message.lower() == "exit":
-                peer_socket.sendall(message.encode())
-                print("Saindo do chat.")
-                exit_event.set()
-                break
-            peer_socket.sendall(message.encode())
-    except Exception as e:
-        if not exit_event.is_set():  # Só exibir erro se não estiver saindo
-            print("\nErro ao enviar mensagem:", str(e))
-    finally:
-        peer_socket.close()
-
-def handle_connection(server_socket):
-    """Função para aceitar conexões de entrada."""
-    while not exit_event.is_set():
-        try:
-            peer_socket, addr = server_socket.accept()
-            print(f"\nConexão aceita de {addr}")
-            
-            # Inicia threads para enviar e receber mensagens com o novo peer
-            threading.Thread(target=receive_messages, args=(peer_socket,), daemon=True).start()
-            threading.Thread(target=send_messages, args=(peer_socket,), daemon=True).start()
-        except Exception as e:
-            if not exit_event.is_set():
-                print("\nErro ao aceitar conexão:", str(e))
-            break
-
-def connect_to_peer(port):
-    """Solicita o IP do peer e tenta estabelecer uma conexão."""
-    while not exit_event.is_set():
-        try:
-            target_ip = input("\nDigite o IP do peer para conectar (ou 'exit' para sair): ")
-            if target_ip.lower() == "exit":
-                print("Encerrando chat.")
-                exit_event.set()
-                break
-
-            # Conecta ao peer especificado
-            peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            peer_socket.connect((target_ip, port))
-            print(f"Conectado ao peer em {target_ip}:{port}")
-
-            # Inicia threads para enviar e receber mensagens
-            threading.Thread(target=receive_messages, args=(peer_socket,), daemon=True).start()
-            threading.Thread(target=send_messages, args=(peer_socket,), daemon=True).start()
-            break
-        except Exception as e:
-            print(f"Erro ao conectar ao peer: {e}")
-            continue
-
-def start_peer(ip):
-    """Função para iniciar o peer no modo servidor e cliente simultaneamente."""
-    port = 8080
-
-    # Inicia o servidor
+def start_server():
+    """Inicia o servidor."""
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind((ip, port))
+    ip_address = socket.gethostbyname(socket.gethostname())
+    server_socket.bind((ip_address, PORT))
     server_socket.listen(1)
-    print(f"Escutando por conexões em {ip}:{port}...")
+    print(f"Aguardando conexão em {ip_address}:{PORT}...")
+    conn, addr = server_socket.accept()
+    print(f"Conexão estabelecida com {addr}")
+    start_game(conn, is_server=True)
 
-    # Inicia a thread para aceitar conexões de entrada
-    threading.Thread(target=handle_connection, args=(server_socket,), daemon=True).start()
-
-    # Solicita o IP do peer para conectar
-    connect_to_peer(port)
-
-    # Espera que a aplicação seja encerrada
-    while not exit_event.is_set():
-        pass
-
-    server_socket.close()
-    sys.exit(0)
+def start_client(ip):
+    """Inicia o cliente."""
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((ip, PORT))
+    print(f"Conectado ao servidor {ip}:{PORT}")
+    start_game(client_socket, is_server=False)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Aplicativo de chat P2P.")
-    parser.add_argument("--ip", type=str, required=True, help="Endereço IP para escutar conexões")
-
+    import argparse
+    parser = argparse.ArgumentParser(description="Batalha naval P2P.")
+    parser.add_argument("--ip", type=str, help="Endereço IP do servidor (opcional para cliente).")
     args = parser.parse_args()
 
-    start_peer(args.ip)
+    if args.ip:
+        start_client(args.ip)
+    else:
+        start_server()
