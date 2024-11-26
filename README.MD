@@ -34,13 +34,13 @@ To start the game, you can either run the server or connect as a client.
 ### Start as Server
 
 ```sh
-python peer.py
+python3 peer.py
 ```
 
 ### Connect as Client
 
 ```sh
-python peer.py --ip <server-ip-address>
+python3 peer.py --ip <server-ip-address>
 ```
 
 ## Files
