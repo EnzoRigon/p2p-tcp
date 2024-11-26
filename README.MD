@@ -13,8 +13,8 @@ This project is a peer-to-peer (P2P) implementation of the classic Battleship ga
 
 1. **Clone the repository:**
     ```sh
-    git clone https://github.com/yourusername/battleship-p2p.git
-    cd battleship-p2p
+    https://github.com/EnzoRigon/p2p-tcp.git
+    cd p2p-tcp
     ```
 
 2. **Build the Docker image:**
