@@ -7,7 +7,8 @@ This project is a peer-to-peer (P2P) implementation of the classic Battleship ga
 - [Installation](#installation)
 - [Usage](#usage)
 - [Files](#files)
-- [Gameplay](#gameplay) 
+- [Gameplay](#gameplay)
+- [Persistence](#persistence)
 
 ## Installation
 
@@ -62,3 +63,23 @@ python3 peer.py --ip <server-ip-address>
 3. **Boards:**
     - The player's board and the opponent's board are displayed side by side.
     - Hits are marked with `X`, misses with `O`, and ships with `S`.
+
+## Persistence
+
+The game state can be saved and loaded to allow players to resume their game later.
+
+### Saving the Game
+
+The game state is automatically saved to a file named `navy_battle_save.json` whenever an error or interruption occurs. You can also manually save the game state by calling the `save_game` method of the `NavyBattleGame` class.
+
+### Loading the Game
+
+To load a previously saved game state, you can pass the `--game-state` argument followed by the path to the JSON file when starting the server or client.
+
+#### Example
+
+```sh
+python3 peer.py --ip <server-ip-address> --game-state navy_battle_save.json
+```
+
+This will load the game state from the specified JSON file and resume the game from where it was left off.

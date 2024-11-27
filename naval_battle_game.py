@@ -5,15 +5,28 @@ from colorama import Fore, init
 init(autoreset=True)
 
 class NavyBattleGame:
-    def __init__(self):
+    def __init__(self, game_state_json=None):
         self.board_size = 10
         self.player_board = [["~"] * self.board_size for _ in range(self.board_size)]
         self.opponent_board = [["~"] * self.board_size for _ in range(self.board_size)]
         self.player_ships = []
         self.opponent_ships = {}
         self.game_over = False
+        self.is_player_turn = None
 
-        self.place_player_ships()
+        if game_state_json:
+            self.load_game_from_json(game_state_json)
+        else:
+            self.place_player_ships()
+
+    def load_game_from_json(self, game_state_json):
+        """Carrega o estado do jogo a partir de um JSON."""
+        game_state = json.loads(game_state_json)
+        self.player_board = game_state["player_board"]
+        self.opponent_board = game_state["opponent_board"]
+        self.player_ships = game_state["player_ships"]
+        self.opponent_ships = game_state["opponent_ships"]
+        self.is_player_turn = game_state["is_player_turn"]
 
     def place_player_ships(self):
         """Posiciona automaticamente os navios do jogador."""
@@ -118,3 +131,48 @@ class NavyBattleGame:
             return Fore.YELLOW + cell  # Erro
         else:
             return Fore.CYAN + cell  # Água (~)
+
+    def save_game(self, file_name="navy_battle_save.json"):
+        """
+        Salva o estado atual do jogo em um arquivo JSON.
+        """
+        game_state = {
+            "player_board": self.player_board,
+            "opponent_board": self.opponent_board,
+            "player_ships": self.player_ships,
+            "opponent_ships": self.opponent_ships,
+            "is_player_turn": self.is_player_turn
+        }
+        with open(file_name, "w") as save_file:
+            json.dump(game_state, save_file, indent=4)
+        print(f"Jogo salvo no arquivo: {file_name}")
+
+    def load_game(self, file_name="navy_battle_save.json"):
+        """
+        Carrega o estado do jogo de um arquivo JSON.
+        """
+        try:
+            with open(file_name, "r") as save_file:
+                game_state = json.load(save_file)
+                self.player_board = game_state["player_board"]
+                self.opponent_board = game_state["opponent_board"]
+                self.player_ships = game_state["player_ships"]
+                self.opponent_ships = game_state["opponent_ships"]
+                self.is_player_turn = game_state["is_player_turn"]
+            print(f"Jogo carregado do arquivo: {file_name}")
+        except FileNotFoundError:
+            print("Nenhum arquivo de salvamento encontrado. Começando um novo jogo.")
+
+    def print_shot_result(self, result):
+        """Imprime o resultado de um ataque."""
+        if result:
+            print(Fore.GREEN + "Você acertou!")
+        else:
+            print(Fore.RED + "Você errou!")
+
+    def print_game_result(self, result):
+        """Imprime o resultado de um ataque."""
+        if result:
+            print(Fore.GREEN + "Todos os navios do oponente foram destruídos! Você venceu!")
+        else:
+            print(Fore.RED + "Todos os seus navios foram destruídos! Você perdeu!")

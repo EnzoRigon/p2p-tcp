@@ -2,3 +2,4 @@
 venv/
 .vscode/
 __pycache__/
+navy_battle_save.json
