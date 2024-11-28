@@ -23,18 +23,19 @@ def start_game(sock, is_server, game_state_json=None):
         game = NavyBattleGame()
 
     try:
-        if is_server if game.is_player_turn is None else game.is_player_turn:
-            send_message(sock, game.export_player_ships_to_json())
-            print("Aguardando navios do oponente...")
-            ships_json = receive_message(sock)
-            game.receive_opponent_ships(ships_json)
-            game.is_player_turn = True
-        else:
-            print('Agurdando navios do oponente...')
-            ships_json = receive_message(sock)
-            game.receive_opponent_ships(ships_json)
-            send_message(sock, game.export_player_ships_to_json())
-            game.is_player_turn = False
+        if not game_state_json:
+            if is_server:
+                send_message(sock, game.export_player_ships_to_json())
+                print("Aguardando navios do oponente...")
+                ships_json = receive_message(sock)
+                game.receive_opponent_ships(ships_json)
+                game.is_player_turn = True
+            else:
+                print('Agurdando navios do oponente...')
+                ships_json = receive_message(sock)
+                game.receive_opponent_ships(ships_json)
+                send_message(sock, game.export_player_ships_to_json())
+                game.is_player_turn = False
 
         print("Tabuleiros configurados! Que comece o jogo!")
         game.print_boards()
