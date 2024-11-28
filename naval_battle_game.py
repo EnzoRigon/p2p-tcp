@@ -88,35 +88,32 @@ class NavyBattleGame:
     def attack_opponent(self, coordinates):
         """Registra o ataque no tabuleiro do oponente."""
         x, y = coordinates
-        if self.opponent_board[x][y] not in ["~"]:  # Ignorar células já atacadas
+        if self.opponent_board[x][y] not in ["~"]:  
             return False
         for ship_key, positions in self.opponent_ships.items():
             if (x, y) in positions:
-                self.opponent_board[x][y] = "X"  # Marca como acerto
+                self.opponent_board[x][y] = "X"  
                 positions.remove((x, y))
                 if not positions:
                     print(Fore.GREEN + f"Você derrubou o {ship_key} do oponente!")
-                    del self.opponent_ships[ship_key]  # Remove o navio se afundado
+                    del self.opponent_ships[ship_key]  
                 return True
-        self.opponent_board[x][y] = "O"  # Marca como erro
+        self.opponent_board[x][y] = "O"  
         return False
 
 
     def print_boards(self):
-        """Imprime os tabuleiros do jogador e do oponente lado a lado, com espaçamento adequado."""
-        # Espaçamento entre os tabuleiros
+        """Imprime os tabuleiros do jogador e do oponente lado a lado, com espaçamento adequado."""   
         spacing = " " * 10
 
-        # Cabeçalho dos tabuleiros
         header = f"{'Seu Tabuleiro':^{self.board_size * 2}}{spacing}{'Tabuleiro do Oponente':^{self.board_size * 2}}"
         print(header)
-        print("-" * len(header))  # Linha separadora
+        print("-" * len(header))  
 
         for row_player, row_opponent in zip(self.player_board, self.opponent_board):
-            # Constrói as linhas do jogador e do oponente
             player_row = " ".join(self.format_cell(cell, is_player=True) for cell in row_player)
             opponent_row = " ".join(self.format_cell(cell, is_player=False) for cell in row_opponent)
-            # Imprime as linhas com o espaçamento definido
+
             print(f"{player_row:<{self.board_size * 2}}{spacing}{opponent_row:<{self.board_size * 2}}")
         print()
 
@@ -124,13 +121,13 @@ class NavyBattleGame:
     def format_cell(self, cell, is_player):
         """Formata a célula com cores apropriadas."""
         if cell == "S":
-            return Fore.GREEN + cell if is_player else "~"  # O oponente nunca vê navios
+            return Fore.GREEN + cell if is_player else "~"  
         elif cell == "X":
-            return Fore.RED + cell  # Acerto
+            return Fore.RED + cell  
         elif cell == "O":
-            return Fore.YELLOW + cell  # Erro
+            return Fore.YELLOW + cell  
         else:
-            return Fore.CYAN + cell  # Água (~)
+            return Fore.CYAN + cell  
 
     def save_game(self, file_name="navy_battle_save.json"):
         """

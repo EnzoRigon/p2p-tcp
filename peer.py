@@ -1,6 +1,5 @@
 import socket
 import threading
-import json
 from naval_battle_game import NavyBattleGame
 import sys
 import netifaces
@@ -41,7 +40,7 @@ def start_game(sock, is_server, game_state_json=None):
         game.print_boards()
     except Exception as e:
         print(f"Erro durante a configuração inicial: {e}")
-        game.save_game()  # Salvar estado em caso de erro
+        game.save_game()
         sys.exit(1)
 
     while not game.game_over:
@@ -62,7 +61,7 @@ def start_game(sock, is_server, game_state_json=None):
                         if not game.opponent_ships:
                             game.print_game_result(True)
                             game.game_over = True
-                        game.print_boards()  # Atualiza os tabuleiros após a jogada do jogador
+                        game.print_boards()
                         break
                     except ValueError as e:
                         print(e)
@@ -75,12 +74,12 @@ def start_game(sock, is_server, game_state_json=None):
                 if not game.player_ships:
                     game.print_game_result(False)
                     game.game_over = True
-                game.print_boards()  # Atualiza os tabuleiros após a jogada do oponente
+                game.print_boards()  
                 game.is_player_turn = True
 
         except (socket.error, KeyboardInterrupt) as e:
             print(f"Jogo interrompido: {e}")
-            game.save_game()  # Salvar estado do jogo ao detectar erro ou interrupção
+            game.save_game()  
             print("Estado do jogo salvo.")
             try:
                 sock.close()
@@ -91,7 +90,7 @@ def start_game(sock, is_server, game_state_json=None):
 
     if game.game_over:
         print("Jogo concluído! Obrigado por jogar.")
-        # Limpar arquivo de salvamento ao concluir o jogo
+        
         try:
             import os
             os.remove("navy_battle_save.json")
