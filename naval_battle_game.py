@@ -83,7 +83,6 @@ class NavyBattleGame:
                 break
         if not hit:
             self.player_board[x][y] = "O"
-        return hit
 
     def attack_opponent(self, coordinates):
         """Registra o ataque no tabuleiro do oponente."""

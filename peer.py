@@ -71,7 +71,7 @@ def start_game(sock, is_server, game_state_json=None):
                 print("Aguardando jogada do oponente...")
                 coordinates = receive_message(sock)
                 coordinates = (int(coordinates[0]), int(coordinates[1]))
-                hit = game.process_attack(coordinates)
+                game.process_attack(coordinates)
                 if not game.player_ships:
                     game.print_game_result(False)
                     game.game_over = True
