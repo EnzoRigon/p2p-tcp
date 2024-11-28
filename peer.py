@@ -3,6 +3,7 @@ import threading
 import json
 from naval_battle_game import NavyBattleGame
 import sys
+import netifaces
 
 PORT = 8080
 exit_event = threading.Event()
@@ -103,10 +104,24 @@ def start_game(sock, is_server, game_state_json=None):
         except Exception as e:
             print(f"Erro ao encerrar a conexão: {e}")
 
+def get_first_interface_ip():
+    interfaces = netifaces.interfaces()
+    for interface in interfaces:
+        addresses = netifaces.ifaddresses(interface)
+        if netifaces.AF_INET in addresses:
+            for addr in addresses[netifaces.AF_INET]:
+                ip = addr['addr']
+                if not ip.startswith("127."):
+                    return ip
+    return None
+
 def start_server(game_state_json=None):
     """Inicia o servidor."""
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    ip_address = socket.gethostbyname(socket.gethostname())
+    ip_address = get_first_interface_ip()
+    if not ip_address:
+        print("Não foi possível obter o endereço IP da primeira interface.")
+        return
     server_socket.bind((ip_address, PORT))
     server_socket.listen(1)
     print(f"Aguardando conexão em {ip_address}:{PORT}...")
