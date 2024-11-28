@@ -110,11 +110,14 @@ class NavyBattleGame:
         print(header)
         print("-" * len(header))  
 
-        for row_player, row_opponent in zip(self.player_board, self.opponent_board):
+        col_numbers = " ".join(map(str, range(self.board_size)))
+        print(f"   {col_numbers:<{self.board_size * 2}}{spacing}   {col_numbers:<{self.board_size * 2}}")
+
+        for i, (row_player, row_opponent) in enumerate(zip(self.player_board, self.opponent_board)):
             player_row = " ".join(self.format_cell(cell, is_player=True) for cell in row_player)
             opponent_row = " ".join(self.format_cell(cell, is_player=False) for cell in row_opponent)
 
-            print(f"{player_row:<{self.board_size * 2}}{spacing}{opponent_row:<{self.board_size * 2}}")
+            print(f"{i:<2} {player_row:<{self.board_size * 2}}{spacing}{i:<2} {opponent_row:<{self.board_size * 2}}")
         print()
 
 
