@@ -1,11 +1,9 @@
 import socket
-import threading
 from naval_battle_game import NavyBattleGame
 import sys
 import netifaces
 
 PORT = 8080
-exit_event = threading.Event()
 
 def send_message(sock, message):
     """Envia uma mensagem ao peer."""
